@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Sanal Ortamlar
+venv/
+env/
+SiNAV/
+.venv/
+
+# Çevresel Değişkenler (ÇOK ÖNEMLİ - API Key'leri gizler)
+.env
+
+# İşletim Sistemi Dosyaları
+.DS_Store
+
+# IDE Dosyaları
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/secrets.toml

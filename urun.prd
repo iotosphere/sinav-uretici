@@ -1,0 +1,86 @@
+📄 Ürün Gereksinimleri Belgesi (PRD)
+1. Giriş
+Alan	Değer
+Proje Adı	AI Destekli Kurumsal Sınav Hazırlama Botu (ExamBot)
+Versiyon	1.0.0 (MVP - Minimum Viable Product)
+Hazırlayan	[Kullanıcı Adı]
+Tarih	28 Kasım 2025
+Hedef Kitle	Kurumsal Eğitim Kurumlarında çalışan öğretmenler
+
+
+2. Amaç ve Kapsam
+Bu projenin temel amacı, öğretmenlerin ders notlarını (PDF) yükleyerek, yapay zeka (LLM) aracılığıyla bu notlara özel, kurumsal formata uygun ve cevap anahtarlı sınav kağıtlarını saniyeler içinde Word (.docx) formatında oluşturmasını sağlamaktır.
+
+Kapsam	Açıklama
+Veri Kaynağı	Kullanıcının yüklediği PDF dosyaları.
+Çıktı Formatı	Microsoft Word (.docx) formatında kurumsal sınav kağıdı ve cevap anahtarı.
+Çözüm	Streamlit tabanlı web uygulaması ve çoklu LLM (OpenAI, Anthropic, Gemini) entegrasyonu.
+
+
+
+3. Kullanıcı Hikayeleri ve Akış
+A. Ana Kullanıcı Akışı
+Kullanıcı web uygulamasını açar.
+
+Sidebar (Kenar Çubuğu): Kullanıcı bir AI sağlayıcısı (Gemini, GPT, Claude) seçer ve API anahtarını girer.
+
+Metadata: Kullanıcı okul adı, ders, sınıf ve sınav dönemi gibi bilgileri girer.
+
+Veri Yükleme: Kullanıcı ders notlarının PDF dosyasını yükler.
+
+Modül Seçimi: Uygulama PDF'i parse eder ve metin parçalarını ("Modül 1", "Modül 2" vb.) listeleyerek kullanıcının sınav kapsamını seçmesini sağlar.
+
+Soru Üretimi: Kullanıcı "Sınavı Oluştur" butonuna tıklar. Seçilen modül metni, prompt ile AI'a gönderilir.
+
+Çıktı: AI'dan gelen JSON verisi kurumsal Word şablonuna işlenir ve kullanıcıya indirme butonu gösterilir.
+
+B. Kritik Hikayeler
+API Anahtarı Yönetimi (Gizli): Kullanıcı, .env dosyasından okunan veya arayüze girilen API anahtarı ile kimlik doğrulaması yapabilmelidir.
+
+Çoklu LLM Desteği: Sistem, OpenAI (GPT-4o), Anthropic (Claude 3.5 Sonnet) ve özellikle Google (Gemini 2.0 Flash) modellerini desteklemelidir.
+
+Kurumsal Format: Word çıktısı, kullanıcının talep ettiği tablo bazlı kurumsal başlık ve puanlama yapısına tam olarak uymalıdır.
+
+📐 Mimari Tasarım Belgesi (MD)
+1. Genel Mimari
+Proje, hızlı prototipleme ve kolay dağıtım için Streamlit üzerine inşa edilmiş, modüler, 3 katmanlı bir monolitik mimari kullanır.
+
+Getty Images
+Keşfet
+
+2. Teknolojik Yığın (Stack)
+Katman	Teknoloji	Amaç
+Frontend/UI	Streamlit	Hızlı arayüz geliştirme ve kullanıcı girişi/çıkışı yönetimi.
+Backend/Core	Python 3.10+	Ana iş mantığı, API çağrıları ve dosya işleme.
+PDF İşleme	pypdf	PDF'ten metin çıkarımı ve kelime bazlı bölümlendirme.
+LLM İstemcileri	openai, anthropic, google-genai	Üç farklı AI sağlayıcısıyla iletişim ve JSON çıktısı zorlama.
+Doküman Çıktısı	python-docx	Kurumsal Word şablonunun programatik olarak oluşturulması.
+Güvenlik	python-dotenv	API anahtarlarının .env dosyasında güvenli saklanması.
+
+E-Tablolar'a aktar
+
+3. Modül Yapısı ve Sorumluluklar
+Dosya/Modül	Sorumluluk	Notlar
+app.py	Ana Uygulama	Tüm UI elemanlarını (Sidebar, Butonlar) ve modül çağrılarını yönetir.
+extract_text_from_pdf()	PDF Metin Çıkarımı	Streamlit dosya objesini alır, metni çıkarır, sayfa/kelime bazlı temizleme yapar.
+get_module_chunks()	Metin Bölümleme	Çıkarılan metni sabit bir chunk_size (örn: 4000 kelime) ile AI'a uygun parçalara ayırır.
+soru_uret()	AI API İstekleri	Sağlayıcıya özel (OpenAI, Gemini 2.0 Flash, Claude) modeli çağırır. Prompt'ta kesinlikle JSON formatı zorlar.
+build_docx_exam()	Word Oluşturma	Metadata (Okul, Ders, Sınıf) ve AI'dan gelen JSON'u kullanarak kurumsal tablo yapısını programatik olarak oluşturur. Öğrenci sınavı ve Cevap Anahtarını ayrı ayrı basar.
+
+E-Tablolar'a aktar
+
+4. Veri Modeli: AI Çıktısı (JSON Şeması)
+Tüm LLM'lerden beklenen kesin çıktı formatı aşağıdaki JSON şemasına uymalıdır. Bu, docx_builder'ın hatasız çalışması için kritiktir.
+
+JSON
+
+{
+  "sorular": [
+    {
+      "no": 1,
+      "soru_metni": "Hücre zarının seçici geçirgen olmasının canlılık için önemi nedir?",
+      "cevap": "Hücre zarı, madde alışverişini kontrol ederek hücre içi dengenin korunmasını sağlar. Bu, istenmeyen maddelerin hücreye girmesini engeller."
+    },
+    // ... Soru 2, Soru 3, vb.
+  ]
+}

@@ -1,0 +1,26 @@
+# Web Arayüzü
+streamlit
+
+# PDF İşleme
+pypdf
+
+# Yapay Zeka Sağlayıcıları
+openai
+anthropic
+google-generativeai
+
+# Word (DOCX) Çıktısı
+python-docx
+
+# Çevresel Değişken Yönetimi
+python-dotenv
+
+# Görselleştirme
+matplotlib
+
+# Veritabanı ve Auth
+supabase
+
+# RAG (Retrieval-Augmented Generation)
+chromadb
+sentence-transformers

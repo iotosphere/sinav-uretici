@@ -1,0 +1,94 @@
+import google.generativeai as genai
+import json
+
+def create_system_prompt(metin_icerigi, soru_sayisi):
+    """AI için soru oluşturma prompt'unu hazırlar."""
+    prompt = f"""
+    Aşağıdaki metin içeriğinden {soru_sayisi} adet açık uçlu soru oluştur.
+    
+    Metin İçeriği:
+    {metin_icerigi}
+    
+    Lütfen:
+    1. Soruları farklı zorluk seviyelerinde oluştur (kolay, orta, zor)
+    2. Her soruyu net ve anlaşılır şekilde yaz
+    3. Yanıtları JSON formatında döndür
+    
+    JSON Formatı:
+    {{
+        "questions": [
+            "Soru 1",
+            "Soru 2",
+            ...
+        ]
+    }}
+    """
+    return prompt
+
+def soru_uret(provider, api_key, metin_icerigi, gemini_endpoint=None, soru_sayisi=10):
+    """
+    Verilen metin içeriğinden AI kullanarak soru üretir.
+    
+    Args:
+        provider: AI sağlayıcısı ("Google", "OpenAI", vb.)
+        api_key: API anahtarı
+        metin_icerigi: Soru üretilecek metin
+        gemini_endpoint: Gemini için özel endpoint (opsiyonel)
+        soru_sayisi: Üretilecek soru sayısı
+        
+    Returns:
+        str: JSON formatında sorular
+    """
+    
+    # Prompt oluştur
+    prompt = create_system_prompt(metin_icerigi, soru_sayisi)
+    
+    # --- Google (Gemini) Mantığı ---
+    if "Google" in provider:
+        try:
+            # Gemini API yapılandırması
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            
+            # Response'ı JSON formatında iste
+            response = model.generate_content(
+                prompt,
+                generation_config={
+                    "temperature": 0.7,
+                    "top_p": 0.8,
+                    "max_output_tokens": 2000,
+                }
+            )
+            
+            # Response text'ini döndür
+            return response.text
+            
+        except Exception as e:
+            error_message = f"Gemini API Hatası: {str(e)}"
+            return json.dumps({"error": error_message})
+    
+    # --- OpenAI Mantığı ---
+    elif "OpenAI" in provider:
+        try:
+            # OpenAI API implementasyonu burada olmalı
+            # Şimdilik basit bir hata döndür
+            return json.dumps({"error": "OpenAI implementasyonu henüz tamamlanmadı"})
+            
+        except Exception as e:
+            error_message = f"OpenAI API Hatası: {str(e)}"
+            return json.dumps({"error": error_message})
+    
+    # --- Anthropic Mantığı ---
+    elif "Anthropic" in provider:
+        try:
+            # Anthropic API implementasyonu burada olmalı
+            # Şimdilik basit bir hata döndür
+            return json.dumps({"error": "Anthropic implementasyonu henüz tamamlanmadı"})
+            
+        except Exception as e:
+            error_message = f"Anthropic API Hatası: {str(e)}"
+            return json.dumps({"error": error_message})
+    
+    # Desteklenmeyen sağlayıcı
+    else:
+        return json.dumps({"error": f"Desteklenmeyen AI sağlayıcısı: {provider}"})
