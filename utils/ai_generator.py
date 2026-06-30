@@ -74,8 +74,32 @@ Her soru için şunları içeren detaylı çözüm yaz:
   "puanlama_kriterleri": "5 puan: Gerilim tanımı doğru\n5 puan: Akım tanımı doğru\n5 puan: Direnç tanımı doğru\n5 puan: V=I×R formülü doğru",
   "yaygin_hatalar": ["Formülü ters yazma", "Birimleri karıştırma", "Orantıyı ters kurma"],
   "ipucu": "Üç temel büyüklüğü tanımlayın",
-  "kaynak": "Metin: Elektrik Devreleri Bölümü"
+  "kaynak": "Metin: Elektrik Devreleri Bölümü",
+  "visual_data": {{"type": "ohm", "v": "V", "r": "R", "i": "I"}}
 }}
+
+🎨 GÖRSEL ŞEKİLLER (visual_data) — ÖNEMLİ:
+Görsel gerektiren sorulara "visual_data" alanı EKLE (otomatik SVG çizilir).
+Sadece Coulomb, Ohm Yasası, devre, Kirchhoff, optik, kuvvet gibi şekille anlam kazanan sorulara ekle.
+Saf metin/kavramsal sorulara EKLEME.
+
+Desteklenen tipler ve parametreleri:
+• "coulomb" — İki noktasal yük + mesafe + kuvvet
+    q1, q2 (örn: "q₁ = +4 μC", "q₂ = −2 μC")
+    d (örn: "r = 30 cm")
+• "ohm" — Basit DC devre (pil + direnç + ampermetre)
+    v (örn: "V = 24 V"), r (örn: "R"), i (örn: "I")
+• "seri" — Art arda dirençler
+    n (2-4), labels (örn: ["R₁=6 Ω", "R₂=12 Ω"]), v (örn: "V")
+• "paralel" — Yan yana dirençler
+    n (2-4), labels, v
+• "kirchhoff" — Düğüm noktası + giren/çıkan akımlar
+    giren: [{{"label": "I₁", "value": "3 A"}}, ...]
+    cikan: [{{"label": "I₃", "value": "?"}}, ...]
+• "elektrik_alan" — Tek yük + radyal alan çizgileri
+    q (örn: "Q = +8 μC")
+
+Örnek: {{"type": "coulomb", "q1": "q₁=+4 μC", "q2": "q₂=−2 μC", "d": "r=30 cm"}}
 
 📋 GEREKLİLER:
 1. TÜM {soru_sayisi} soruyu üret
@@ -85,6 +109,7 @@ Her soru için şunları içeren detaylı çözüm yaz:
 5. Türkçe karakterleri doğru kullan (ışğüöç)
 6. JSON dışında hiçbir metin yazma
 7. Kesinlikle SEÇENEK (A,B,C,D,E) kullanma - açık uçlu soru!
+8. Görsel gerektiren sorulara "visual_data" alanı ekle (yukarıdaki kurallara göre)
 
 Şimdi {soru_sayisi} adet AÇIK UÇLU soruyu (toplam 100 puan) JSON formatında üret."""
     

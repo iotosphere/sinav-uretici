@@ -18,6 +18,9 @@ python-dotenv
 # Görselleştirme
 matplotlib
 
+# İnfografi çıktısı (HTML → PNG render)
+playwright>=1.40
+
 # Veritabanı ve Auth
 supabase
 

@@ -5,6 +5,7 @@ from docx.oxml.ns import qn
 import json
 import io
 import re
+import datetime
 
 # Parsing Fonksiyonu
 def parse_questions_from_ai_response(questions_data):
@@ -43,6 +44,11 @@ def build_docx_exam(metadata, questions_json):
     
     doc = Document()
     questions = parse_questions_from_ai_response(questions_json)
+
+    # Eğitim-öğretim yılı (Türkiye: Eylül-Haziran)
+    _now = datetime.datetime.now()
+    _sy_start = _now.year if _now.month >= 9 else _now.year - 1
+    school_year = f"{_sy_start}-{_sy_start + 1}"
     
     # Sayfa kenar boşluklarını ayarla
     sections = doc.sections
@@ -58,10 +64,10 @@ def build_docx_exam(metadata, questions_json):
     header_table.style = 'Table Grid'
     
     # Hücreleri doldurma
-    header_table.cell(0, 0).text = metadata.get('sinif', '……') + ' SINIF' 
-    header_table.cell(0, 1).merge(header_table.cell(0, 3)).text = metadata.get('okul', 'HARPUT KAPI ANADOLU LİSESİ')
+    header_table.cell(0, 0).text = metadata.get('sinif', '……') + ' SINIF'
+    header_table.cell(0, 1).merge(header_table.cell(0, 3)).text = metadata.get('okul', 'OKUL ADI')
 
-    header_table.cell(1, 0).merge(header_table.cell(1, 1)).text = "2024-2025 EĞİTİM ÖĞRETİM YILI"
+    header_table.cell(1, 0).merge(header_table.cell(1, 1)).text = f"{school_year} EĞİTİM ÖĞRETİM YILI"
     header_table.cell(1, 2).text = "ADI:"
     header_table.cell(1, 3).text = "PUAN"
 

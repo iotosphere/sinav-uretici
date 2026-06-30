@@ -1,12 +1,14 @@
 import streamlit as st
 import os
 import io
+import base64
 from dotenv import load_dotenv
 
 # Hata giderme adımları sonrası artık bu importlar çalışmalıdır:
 from utils.pdf_parser import extract_text_from_pdf, get_module_chunks
 from utils.ai_generator import soru_uret
 from utils.docx_builder import build_docx_exam
+from utils.infographic_builder import build_exam_infographic, build_exam_pdf
 from utils.rag import RAGSystem
 
 # .env dosyasındaki değişkenleri yükle
@@ -88,13 +90,21 @@ st.header("📋 Sınav Bilgileri")
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    okul_adi = st.text_input("Okul Adı", value="XYZ Lisesi")
+    okul_adi = st.text_input("Okul Adı", value="", placeholder="Örn: Atatürk Anadolu Lisesi")
 with col2:
-    ders_adi = st.text_input("Ders Adı", value="Fen Bilgisi")
+    ders_adi = st.text_input("Ders Adı", value="", placeholder="Ders adını girin")
 with col3:
-    ogretmen_adi = st.text_input("Öğretmen Adı", value="Öğretmen Adı")
+    ogretmen_adi = st.text_input("Öğretmen Adı", value="", placeholder="Ad Soyad")
 with col4:
     sinav_no = st.selectbox("Sınav No", ["1. Sınav", "2. Sınav", "3. Sınav"])
+
+# Okul amblemi / logo (opsiyonel — PNG / JPG / SVG)
+school_logo = st.file_uploader(
+    "🏫 Okul Amblemi / Logo (opsiyonel — PNG / JPG / SVG)",
+    type=["png", "jpg", "jpeg", "svg"],
+    key="school_logo",
+    help="Sınav kağıdının sol üstünde görünecek. Boş bırakırsan varsayılan 🏫 ikonu kullanılır."
+)
 
 # ----------------------------------------------------
 # 4. PDF YÜKLEME VE MODÜL SEÇİMİ
@@ -143,8 +153,8 @@ if is_ready:
         with col1:
             # MiniMax için özel limit
             is_minimax = "MiniMax" in ai_provider
-            max_soru = 5 if is_minimax else 20
-            default_soru = 5 if is_minimax else 10
+            max_soru = 5 if is_minimax else 10
+            default_soru = 5 if is_minimax else 8
             
             if is_minimax:
                 st.warning("⚠️ MiniMax için max 5 soru önerilir (token limiti)")
@@ -300,7 +310,8 @@ if is_ready:
                             
                             # 1.5. Görsel Oluşturma (Varsa)
                             from utils.visualizer import create_visual_for_question
-                            
+                            from utils.visual_detector import detect_visual_data
+
                             # Soruları işle ve gerekirse görsel ekle
                             processed_questions = []
                             if isinstance(parsed_data, dict) and 'sorular' in parsed_data:
@@ -309,15 +320,29 @@ if is_ready:
                                 q_list = parsed_data
                             else:
                                 q_list = []
-                                
+
+                            auto_visual_count = 0
                             for q in q_list:
-                                # Görsel verisi var mı kontrol et
+                                # AI visual_data üretti mi?
+                                if 'visual_data' in q and q['visual_data']:
+                                    pass  # AI'ın ürettiğini kullan
+                                else:
+                                    # AI üretmedi — soru metninden otomatik tespit et
+                                    auto_vd = detect_visual_data(q.get('soru_metni', ''))
+                                    if auto_vd:
+                                        q['visual_data'] = auto_vd
+                                        auto_visual_count += 1
+
+                                # Görsel verisi varsa matplotlib fallback (eski akış — geriye dönük)
                                 if 'visual_data' in q and q['visual_data']:
                                     with st.spinner(f"{q.get('no', '')}. soru için şekil çiziliyor..."):
                                         img_stream = create_visual_for_question(q['visual_data'])
                                         if img_stream:
                                             q['image_stream'] = img_stream
                                 processed_questions.append(q)
+
+                            if auto_visual_count:
+                                st.info(f"🎨 {auto_visual_count} soruya otomatik infografik şekil eklendi (soru metninden tespit).")
                             
                             # Güncellenmiş listeyi kullan (resim stream'leri eklenmiş halde)
                             # JSON string yerine doğrudan listeyi gönderiyoruz, docx_builder bunu desteklemeli
@@ -341,14 +366,14 @@ if is_ready:
                                 # build_docx_exam fonksiyonunu kullanarak Word dosyasını bellekte oluşturuyoruz
                                 docx_bytes = build_docx_exam(
                                     metadata={
-                                        "okul": okul_adi, 
+                                        "okul": okul_adi,
                                         "ders": ders_adi,
-                                        "ogretmen": ogretmen_adi, 
+                                        "ogretmen": ogretmen_adi,
                                         "sinav_no": sinav_no
                                     },
                                     questions_json=processed_questions
                                 )
-                                
+
                                 # 3. İndirme düğmesi
                                 file_name = f"{ders_adi.replace(' ', '_')}_{sinav_no.replace('.', '')}_Sinavi.docx"
                                 st.download_button(
@@ -357,13 +382,78 @@ if is_ready:
                                     file_name=file_name,
                                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                                 )
-                                
+
                             except Exception as docx_err:
                                 st.error(f"❌ Word dosyası oluşturulurken kritik bir hata oluştu: {docx_err}")
                                 st.subheader("🔍 Yapay Zekadan Gelen Ham Veri (Hata Ayıklama İçin):")
-                                
+
                                 # Ham veriyi güvenli bir şekilde göstermek için
                                 st.code(questions_json, language="json")
+
+                            # 4. PNG İnfografi (NotebookLM tarzı) — DOCX'den bağımsız
+                            try:
+                                # Okul logosunu base64 data URI'ye çevir
+                                logo_data_uri = None
+                                if school_logo is not None:
+                                    try:
+                                        school_logo.seek(0)
+                                        img_bytes = school_logo.read()
+                                        img_b64 = base64.b64encode(img_bytes).decode()
+                                        mime = school_logo.type or "image/png"
+                                        logo_data_uri = f"data:{mime};base64,{img_b64}"
+                                    except Exception as logo_err:
+                                        logo_data_uri = None
+                                        st.warning(f"⚠️ Logo okunamadı, varsayılan kullanılacak: {logo_err}")
+
+                                with st.spinner("🎨 İnfografi (PNG) hazırlanıyor..."):
+                                    png_bytes = build_exam_infographic(
+                                        metadata={
+                                            "okul": okul_adi,
+                                            "ders": ders_adi,
+                                            "ogretmen": ogretmen_adi,
+                                            "sinav_no": sinav_no,
+                                            "logo": logo_data_uri,
+                                        },
+                                        questions=processed_questions
+                                    )
+                                png_file_name = f"{ders_adi.replace(' ', '_')}_{sinav_no.replace('.', '')}_Sinavi.png"
+                                st.download_button(
+                                    label="🎨 İnfografi İndir (.png — A4)",
+                                    data=png_bytes.getvalue(),
+                                    file_name=png_file_name,
+                                    mime="image/png"
+                                )
+                            except Exception as png_err:
+                                st.warning(
+                                    f"⚠️ İnfografi oluşturulamadı: {png_err}\n\n"
+                                    "Çözüm: terminalde `~/SINAV/sinav/bin/playwright install chromium` çalıştırın."
+                                )
+
+                            # 5. PDF (A4, çoklu sayfa otomatik) — PNG'den bağımsız
+                            try:
+                                with st.spinner("📄 PDF (A4) hazırlanıyor..."):
+                                    pdf_bytes = build_exam_pdf(
+                                        metadata={
+                                            "okul": okul_adi,
+                                            "ders": ders_adi,
+                                            "ogretmen": ogretmen_adi,
+                                            "sinav_no": sinav_no,
+                                            "logo": logo_data_uri,
+                                        },
+                                        questions=processed_questions
+                                    )
+                                pdf_file_name = f"{ders_adi.replace(' ', '_')}_{sinav_no.replace('.', '')}_Sinavi.pdf"
+                                st.download_button(
+                                    label="📄 Sınav Kağıdını İndir (.pdf — A4)",
+                                    data=pdf_bytes.getvalue(),
+                                    file_name=pdf_file_name,
+                                    mime="application/pdf"
+                                )
+                            except Exception as pdf_err:
+                                st.warning(
+                                    f"⚠️ PDF oluşturulamadı: {pdf_err}\n\n"
+                                    "Çözüm: terminalde `~/SINAV/sinav/bin/playwright install chromium` çalıştırın."
+                                )
                                 
                     except json.JSONDecodeError as json_err:
                         st.error(f"❌ AI geçerli JSON formatında veri döndürmedi: {json_err}")

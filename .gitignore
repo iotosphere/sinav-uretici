@@ -12,8 +12,21 @@ SiNAV/
 # Çevresel Değişkenler (ÇOK ÖNEMLİ - API Key'leri gizler)
 .env
 
+# Kullanıcının kişisel sınav dosyaları (örnek PDF/DOCX çıktıları)
+EET*.pdf
+*Sınav_Sinavi.docx
+*Sınav_Sinavi.pdf
+*Elektrik_ve_Elektronigin_Esaslari*.pdf
+*Elektrik_ve_Elektronigin_Esaslari*.docx
+
 # İşletim Sistemi Dosyaları
 .DS_Store
+
+# Editör backup/temp dosyaları
+*~
+*.swp
+*.bak
+*.py<
 
 # IDE Dosyaları
 .vscode/

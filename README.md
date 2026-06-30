@@ -90,7 +90,7 @@ Uygulama varsayılan olarak `http://localhost:8501` adresinde çalışacaktır.
 
 1. **PDF Yükleyin**: Ders notlarınızı veya ders içeriği dokümanınızı yükleyin
 2. **Modül Seçin**: İçerik otomatik modüllere ayrılacak, istediklerinizi seçin
-3. **Soru Sayısı**: 3-20 arası soru sayısı seçin (MiniMax için max 5)
+3. **Soru Sayısı**: 3-10 arası soru sayısı seçin (MiniMax için max 5)
 4. **AI Modeli**: Kullanmak istediğiniz modeli seçin
 5. **RAG Sistemi**: Büyük PDF'ler için önerilir
 6. **Oluştur**: "Soruları Oluştur" butonuna tıklayın
@@ -179,7 +179,7 @@ Bu uygulama, modern eğitim metodolojilerine uygun olarak tasarlanmıştır:
 
 - **Haftalık Değerlendirme**: 5 soru, 20 dakika
 - **Ara Sınav**: 10 soru, 40 dakika  
-- **Dönem Sonu**: 15-20 soru, 60 dakika
+- **Dönem Sonu**: 10 soru, 60 dakika
 
 ## 🔧 Sorun Giderme
 
